@@ -4,15 +4,15 @@ import math
 
 LM_FILTERS_PATH = "../LeunMalikFilterBank.txt"
 
-def getClusters(samples,labels):
+def getClusters(imgCol, samples, labels):
     clusters = {}
     for i in xrange(0,samples.rows):
         v = samples[i,0]
         lbl = labels[i,0]
         try:
-            clusters[lbl].append(v)
+            clusters[lbl].append(imgCol[i,0])
         except KeyError:
-            clusters[lbl] = [ v ]
+            clusters[lbl] = [ imgCol[i,0] ]
     return clusters
 
 def kmeansUsingIntensity(im,k,iterations,epsilon):
@@ -26,7 +26,7 @@ def kmeansUsingIntensity(im,k,iterations,epsilon):
     cv.KMeans2(samples, k, labels, crit)
 
     #calculate the means
-    clusters = getClusters(samples,labels)
+    clusters = getClusters(col,samples,labels)
 
     means = {}
     for c in clusters:
@@ -43,28 +43,25 @@ def kmeansUsingIntensity(im,k,iterations,epsilon):
 def kmeansUsingIntensityAndLocation(im,k,iterations,epsilon):
     #create the samples and labels vector
     col = cv.Reshape(im, 1,im.width*im.height)
-    samples = cv.CreateMat(col.height, 1, cv.CV_32FC3)
+    samples = cv.CreateMat(col.height, 3, cv.CV_32FC1)
     count = 0
     for j in xrange(0,im.height):
         for i in xrange(0,im.width):
-            value = (im[j,i],i,j)
-            samples[count,0] = value
+            samples[count,0] = im[j,i]
+            samples[count,1] = i
+            samples[count,2] = j
             count+=1
-
 
     labels = cv.CreateMat(col.height, 1, cv.CV_32SC1)
     crit = (cv.CV_TERMCRIT_EPS | cv.CV_TERMCRIT_ITER, iterations, epsilon)
     cv.KMeans2(samples, k, labels, crit)
 
-    #calculate the means
-    clusters = getClusters(samples,labels)
+    clusters = getClusters(col,samples,labels)
 
+    #calculate the means
     means = {}
     for c in clusters:
-        means[c] = 0
-        for v in clusters[c]:
-            means[c] += v[0]
-        means[c] /= len(clusters[c])
+        means[c] = sum(clusters[c])/len(clusters[c])
 
     for m in means:
         print m,means[m],len(clusters[m])
@@ -83,7 +80,7 @@ def kmeansUsingRGB(im,k,iterations,epsilon):
     crit = (cv.CV_TERMCRIT_EPS | cv.CV_TERMCRIT_ITER, iterations, epsilon)
     cv.KMeans2(samples, k, labels, crit)
     #calculate the means
-    clusters = getClusters(samples,labels)
+    clusters = getClusters(col,samples,labels)
 
     means = {}
     for c in clusters:
@@ -153,16 +150,9 @@ def kmeansUsingLM(im,k,iterations,epsilon):
 
     crit = (cv.CV_TERMCRIT_EPS | cv.CV_TERMCRIT_ITER, iterations, epsilon)
     cv.KMeans2(samples, k, labels, crit)
-    #clusters = getClusters(samples,labels)
 
-    clusters = {}
-    for i in xrange(0,samples.rows):
-        v = samples[i]
-        lbl = labels[i,0]
-        try:
-            clusters[lbl].append( col[i,0] )
-        except KeyError:
-            clusters[lbl] = [ col[i,0] ]
+    clusters = getClusters(col,samples,labels)
+
 
     means = {}
     for c in clusters:
@@ -206,14 +196,16 @@ def kmeans(image_name,feature,k,iterations,epsilon):
 
 if __name__ == "__main__":
     name = "../test images/single object/189080.jpg"
-    k = 4
+    #name = "../test images/single object/69015.jpg"
+    #name = "../test images/single object/291000.jpg"
+    k = 3
     iterations = 100
     epsilon = 0.001
 
     print "img name =",name
-    #kmeans(name,"INTENSITY",k,iterations,epsilon)
+    kmeans(name,"INTENSITY",k,iterations,epsilon)
     #kmeans(name,"INTENSITY+LOC",k,iterations,epsilon)
     #kmeans(name,"RGB",k,iterations,epsilon)
     #kmeans(name,"YUV",k,iterations,epsilon)
-    kmeans(name,"LM",k,iterations,epsilon)
+    #kmeans(name,"LM",k,iterations,epsilon)
 
