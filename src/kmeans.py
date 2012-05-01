@@ -1,5 +1,4 @@
 import cv
-from numpy import *
 import math
 
 LM_FILTERS_PATH = "../LeunMalikFilterBank.txt"
