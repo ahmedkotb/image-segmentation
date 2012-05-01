@@ -1,5 +1,6 @@
 import cv
 import math
+import time
 
 LM_FILTERS_PATH = "../LeunMalikFilterBank.txt"
 
@@ -238,6 +239,8 @@ def kmeansUsingILM(im,k,iterations,epsilon):
 
 #-------------------------------------------------------------
 def kmeans(image_name,feature,k,iterations,epsilon):
+    start = time.time()
+    im = None
     if feature == "INTENSITY":
         im = cv.LoadImageM(name,cv.CV_LOAD_IMAGE_GRAYSCALE)
         kmeansUsingIntensity(im,k,iterations,epsilon)
@@ -256,9 +259,11 @@ def kmeans(image_name,feature,k,iterations,epsilon):
     elif feature == "ILM":
         im = cv.LoadImageM(name,cv.CV_LOAD_IMAGE_COLOR)
         kmeansUsingILM(im,k,iterations,epsilon)
+    end = time.time()
 
-    cv.ShowImage("win1",im)
-    cv.WaitKey(0)
+    print "time",end - start,"seconds"
+
+    return im
 
 if __name__ == "__main__":
     name = "../test images/single object/189080.jpg"
@@ -269,10 +274,15 @@ if __name__ == "__main__":
     epsilon = 0.001
 
     print "img name =",name
-    #kmeans(name,"INTENSITY",k,iterations,epsilon)
-    #kmeans(name,"INTENSITY+LOC",k,iterations,epsilon)
-    #kmeans(name,"RGB",k,iterations,epsilon)
-    #kmeans(name,"YUV",k,iterations,epsilon)
-    #kmeans(name,"LM",k,iterations,epsilon)
-    kmeans(name,"ILM",k,iterations,epsilon)
+
+    im = None
+    im = kmeans(name,"INTENSITY",k,iterations,epsilon)
+    #im = kmeans(name,"INTENSITY+LOC",k,iterations,epsilon)
+    #im = kmeans(name,"RGB",k,iterations,epsilon)
+    #im = kmeans(name,"YUV",k,iterations,epsilon)
+    #im = kmeans(name,"LM",k,iterations,epsilon)
+    #im = kmeans(name,"ILM",k,iterations,epsilon)
+
+    cv.ShowImage("win1",im)
+    cv.WaitKey(0)
 
