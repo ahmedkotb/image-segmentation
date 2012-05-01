@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 
 import cv
+import cv2
 from numpy import *
 import pymeanshift as pms
 
 def meanshiftUsingIntensity(path):
-    im = cv.LoadImageM(path,cv.CV_LOAD_IMAGE_GRAYSCALE)
-    (segmentedImage, labelsImage, numberRegions) = pms.segmentMeanShift(im)
-    print "number of region" , numberRegions
-    return segmentedImage
+	im = cv.LoadImageM(path,cv.CV_LOAD_IMAGE_GRAYSCALE)
+	(segmentedImage, labelsImage, numberRegions) = pms.segmentMeanShift(im)
+	print "number of region" , numberRegions
+	return segmentedImage
 
 def meanshiftUsingIntensityAndLocation(path):
     im = cv.LoadImageM(path,cv.CV_LOAD_IMAGE_GRAYSCALE)
