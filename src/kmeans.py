@@ -1,10 +1,11 @@
 import cv
+import cv2
 import math
 import time
+import lmfilters
 from pca import *
 from numpy import *
 
-LM_FILTERS_PATH = "../LeunMalikFilterBank.txt"
 
 def getClusters(imgCol, samples, labels):
     clusters = {}
@@ -17,24 +18,6 @@ def getClusters(imgCol, samples, labels):
             clusters[lbl] = [ imgCol[i,0] ]
     return clusters
 
-def loadLMFilters():
-    filterBank = []
-    for i in xrange(0,48):
-        filter = cv.CreateMat(49,49,cv.CV_32FC1)
-        filterBank.append(filter)
-    f = open(LM_FILTERS_PATH,"r")
-    count = 0
-    for line in f:
-        line = line.strip()
-        if line == "":
-            continue
-        values = line.split()
-        for i in xrange(0,49):
-            filter = filterBank[count/49]
-            filter[count%49,0] = float(values[i])
-        count+=1
-    f.close()
-    return filterBank
 
 def kmeansUsingIntensity(im,k,iterations,epsilon):
     #create the samples and labels vector
@@ -128,7 +111,7 @@ def kmeansUsingYUV(im,k,iterations,epsilon):
 
 def kmeansUsingLM(im,k,iterations,epsilon):
     #array of filter kernels
-    filterBank = loadLMFilters()
+    filterBank = lmfilters.loadLMFilters()
 
     #create the samples and labels vector
     col = cv.Reshape(im, 3,im.width*im.height)
@@ -178,7 +161,7 @@ def kmeansUsingLM(im,k,iterations,epsilon):
 
 def kmeansUsingILM(im,k,iterations,epsilon):
     #array of filter kernels
-    filterBank = loadLMFilters()
+    filterBank = lmfilters.loadLMFilters()
 
     #create the samples and labels vector
     col = cv.Reshape(im, 3,im.width*im.height)
@@ -244,7 +227,7 @@ def kmeansUsingPCA(im,k,iterations,epsilon):
     #convert image to YUV color space
     cv.CvtColor(im,im,cv.CV_BGR2YCrCb)
     #array of filter kernels
-    filterBank = loadLMFilters()
+    filterBank = lmfilters.loadLMFilters()
 
     #create the samples and labels vector
     col = cv.Reshape(im, 3,im.width*im.height)
@@ -355,13 +338,13 @@ if __name__ == "__main__":
     print "img name =",name
 
     im = None
-    #im = kmeans(name,"INTENSITY",k,iterations,epsilon)
+    im = kmeans(name,"INTENSITY",k,iterations,epsilon)
     #im = kmeans(name,"INTENSITY+LOC",k,iterations,epsilon)
     #im = kmeans(name,"RGB",k,iterations,epsilon)
     #im = kmeans(name,"YUV",k,iterations,epsilon)
     #im = kmeans(name,"LM",k,iterations,epsilon)
     #im = kmeans(name,"ILM",k,iterations,epsilon)
-    im = kmeans(name,"PCA",k,iterations,epsilon)
+    #im = kmeans(name,"PCA",k,iterations,epsilon)
 
     cv.ShowImage("win1",im)
     cv.WaitKey(0)
