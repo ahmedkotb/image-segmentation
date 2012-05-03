@@ -9,14 +9,19 @@ def loadLMFilters():
         filterBank.append(filter)
     f = open(LM_FILTERS_PATH,"r")
     count = 0
+    x = 0
+    y = 0
     for line in f:
         line = line.strip()
         if line == "":
             continue
         values = line.split()
-        for i in xrange(0,49):
+	for i in xrange(0,49):
             filter = filterBank[count/49]
-            filter[count%49,0] = float(values[i])
+            filter[x,y] = float(values[i])
+	    y = (y + 1) % 49
+	    if y == 0:
+	    	x = (x + 1) % 49
         count+=1
     f.close()
     return filterBank
