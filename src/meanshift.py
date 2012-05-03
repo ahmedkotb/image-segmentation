@@ -78,10 +78,17 @@ def meanshiftUsingILM(path):
 		filter = filterBank[f]
 		dst = cv.CreateImage(cv.GetSize(im), cv.IPL_DEPTH_32F, 3)
 		name = "result"+str(f)+".jpg"
-		cv.SaveImage(name,dst)
 		response = cv.CreateImage(cv.GetSize(im), cv.IPL_DEPTH_32F, 4)
 		cv.Filter2D(im,dst,filter)
 		featureIndex = getFilterTypeIndex(f)
+		if f == 5:
+			cv.ShowImage("image",dst)
+		#cc8u = cv.CreateMat(cv.GetSize(dst), cv.CV_8U, 1)
+		#ccmin,ccmax,minij,maxij = cv.MinMaxLoc(dst)
+		#ccscale, ccshift = 255.0/(ccmax-ccmin), -ccmin
+		#CvtScale(dst, cc8u, ccscale, ccshift)
+		#SaveImage(name, cc8u)
+		#cv.SetZero(response)
 		for j in xrange(0,im.height):
 			for i in xrange(0,im.width):
 				#take the maximum response from the 3 channels
@@ -123,7 +130,6 @@ def meanshiftUsingILM(path):
 	for i in xrange(0,im.height):
 		for j in xrange(0,im.width):
  			lbl = labelsImage[i,j]
- 			print len(means[lbl])
 			im[i,j] = means[lbl]
 
 	print "number of region" , numberRegions
@@ -132,7 +138,7 @@ def meanshiftUsingILM(path):
 
 
 
-name = "../test images/single object/189080.jpg"
+name = "../test images/general/58060.jpg"
 #name = "../test images/single object/69015.jpg"
 
 #im = meanshiftUsingIntensity(name)
