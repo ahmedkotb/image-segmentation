@@ -1,8 +1,11 @@
 import cv
+import cv2
 import math
 import time
+import lmfilters
+from pca import *
+from numpy import *
 
-LM_FILTERS_PATH = "../LeunMalikFilterBank.txt"
 
 def getClusters(imgCol, samples, labels):
     clusters = {}
@@ -15,24 +18,6 @@ def getClusters(imgCol, samples, labels):
             clusters[lbl] = [ imgCol[i,0] ]
     return clusters
 
-def loadLMFilters():
-    filterBank = []
-    for i in xrange(0,48):
-        filter = cv.CreateMat(49,49,cv.CV_32FC1)
-        filterBank.append(filter)
-    f = open(LM_FILTERS_PATH,"r")
-    count = 0
-    for line in f:
-        line = line.strip()
-        if line == "":
-            continue
-        values = line.split()
-        for i in xrange(0,49):
-            filter = filterBank[count/49]
-            filter[count%49,0] = float(values[i])
-        count+=1
-    f.close()
-    return filterBank
 
 def kmeansUsingIntensity(im,k,iterations,epsilon):
     #create the samples and labels vector
@@ -126,7 +111,7 @@ def kmeansUsingYUV(im,k,iterations,epsilon):
 
 def kmeansUsingLM(im,k,iterations,epsilon):
     #array of filter kernels
-    filterBank = loadLMFilters()
+    filterBank = lmfilters.loadLMFilters()
 
     #create the samples and labels vector
     col = cv.Reshape(im, 3,im.width*im.height)
@@ -176,7 +161,7 @@ def kmeansUsingLM(im,k,iterations,epsilon):
 
 def kmeansUsingILM(im,k,iterations,epsilon):
     #array of filter kernels
-    filterBank = loadLMFilters()
+    filterBank = lmfilters.loadLMFilters()
 
     #create the samples and labels vector
     col = cv.Reshape(im, 3,im.width*im.height)
@@ -237,9 +222,82 @@ def kmeansUsingILM(im,k,iterations,epsilon):
         lbl = labels[i,0]
         col[i,0] = means[lbl]
 
+def kmeansUsingPCA(im,k,iterations,epsilon):
+
+    #convert image to YUV color space
+    cv.CvtColor(im,im,cv.CV_BGR2YCrCb)
+    #array of filter kernels
+    filterBank = lmfilters.loadLMFilters()
+
+    #create the samples and labels vector
+    col = cv.Reshape(im, 3,im.width*im.height)
+    #samples = cv.CreateMat(col.height, 51, cv.CV_32FC1)
+    samples = zeros([col.height,51])
+
+    for f in xrange(0,48):
+        filter = filterBank[f]
+        dst = cv.CreateImage(cv.GetSize(im), cv.IPL_DEPTH_32F, 3)
+        cv.Filter2D(im,dst,filter)
+        count = 0
+        for j in xrange(0,im.height):
+            for i in xrange(0,im.width):
+                #take the maximum response from the 3 channels
+                maxRes = max(dst[j,i])
+                if math.isnan(maxRes):
+                    maxRes = 0.0
+                samples[count,f] = maxRes
+                count+=1
+
+    #YUV features
+    count = 0
+    for j in xrange(0,im.height):
+        for i in xrange(0,im.width):
+            samples[count,48] = im[j,i][0]
+            samples[count,49] = im[j,i][1]
+            samples[count,50] = im[j,i][2]
+            count+=1
+
+    #get the first 4 primary components using pca
+    pca = PCA(samples)
+    pcaSamples = zeros([col.height,4])
+
+    for i in xrange(0,col.height):
+        pcaSamples[i] = pca.getPCA(samples[i],4)
+
+    samples = cv.fromarray(pcaSamples)
+    samplesMat = cv.CreateMat(col.height, 4, cv.CV_32FC1)
+    cv.Scale(samples,samplesMat)
+
+    labels = cv.CreateMat(col.height, 1, cv.CV_32SC1)
+
+    crit = (cv.CV_TERMCRIT_EPS | cv.CV_TERMCRIT_ITER, iterations, epsilon)
+    cv.KMeans2(samplesMat, k, labels, crit)
+
+    clusters = getClusters(col,samplesMat,labels)
+
+
+    means = {}
+    for c in clusters:
+        means[c] = [0.0,0.0,0.0]
+        for v in clusters[c]:
+            means[c][0] += v[0]
+            means[c][1] += v[1]
+            means[c][2] += v[2]
+        means[c][0] /= len(clusters[c])
+        means[c][1] /= len(clusters[c])
+        means[c][2] /= len(clusters[c])
+
+    for m in means:
+        print m,means[m],len(clusters[m])
+
+    #apply clustering to the image
+    for i in xrange(0,col.rows):
+        lbl = labels[i,0]
+        col[i,0] = means[lbl]
 #-------------------------------------------------------------
 def kmeans(image_name,feature,k,iterations,epsilon):
     start = time.time()
+
     im = None
     if feature == "INTENSITY":
         im = cv.LoadImageM(name,cv.CV_LOAD_IMAGE_GRAYSCALE)
@@ -259,6 +317,10 @@ def kmeans(image_name,feature,k,iterations,epsilon):
     elif feature == "ILM":
         im = cv.LoadImageM(name,cv.CV_LOAD_IMAGE_COLOR)
         kmeansUsingILM(im,k,iterations,epsilon)
+    elif feature == "PCA":
+        im = cv.LoadImageM(name,cv.CV_LOAD_IMAGE_COLOR)
+        kmeansUsingPCA(im,k,iterations,epsilon)
+
     end = time.time()
 
     print "time",end - start,"seconds"
@@ -282,6 +344,7 @@ if __name__ == "__main__":
     #im = kmeans(name,"YUV",k,iterations,epsilon)
     #im = kmeans(name,"LM",k,iterations,epsilon)
     #im = kmeans(name,"ILM",k,iterations,epsilon)
+    #im = kmeans(name,"PCA",k,iterations,epsilon)
 
     cv.ShowImage("win1",im)
     cv.WaitKey(0)
