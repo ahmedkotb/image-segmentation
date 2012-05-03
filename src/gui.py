@@ -1,8 +1,6 @@
 #!/usr/bin/env python
-import sip
-sip.setapi('QVariant', 2)
-
-from math import cos, pi, sin
+import cv
+import kmeans
 
 from PyQt4 import QtCore, QtGui
 
@@ -23,27 +21,6 @@ class RenderArea(QtGui.QWidget):
     def sizeHint(self):
         return QtCore.QSize(100, 100)
 
-    def setFillRule(self, rule):
-        self.path.setFillRule(rule)
-        self.update()
-
-    def setFillGradient(self, color1, color2):
-        self.fillColor1 = color1
-        self.fillColor2 = color2
-        self.update()
-
-    def setPenWidth(self, width):
-        self.penWidth = width
-        self.update()
-
-    def setPenColor(self, color):
-        self.penColor = color
-        self.update()
-
-    def setRotationAngle(self, degrees):
-        self.rotationAngle = degrees
-        self.update()
-
 class Window(QtGui.QWidget):
     NumRenderAreas = 9
 
@@ -51,7 +28,10 @@ class Window(QtGui.QWidget):
         super(Window, self).__init__()
 
         browseButton = self.createButton("&Browse...", self.browse)
-        directoryLabel = QtGui.QLabel("Image:")
+        browseButton2 = self.createButton("&Show Output...", self.browse2)
+        segmentButton = self.createButton("&Segment...", self.segment)
+        directoryLabel = QtGui.QLabel("Input Image:")
+        outputImageLabel = QtGui.QLabel("Output Image:")
         self.algorithmComboBox = QtGui.QComboBox()
         self.algorithmComboBox.addItem("K-means")
         self.algorithmComboBox.addItem("Mean Shift")
@@ -71,6 +51,7 @@ class Window(QtGui.QWidget):
         feature = QtGui.QLabel("&Feature:")
         feature.setBuddy(self.featureComboBox)
         self.userpath = QtGui.QLineEdit()
+        self.userpath2 = QtGui.QLineEdit()
         self.kText = QtGui.QLineEdit()
 
         self.kLabel = QtGui.QLabel("&K:")
@@ -106,6 +87,10 @@ class Window(QtGui.QWidget):
         self.mainLayout.addWidget(self.userpath, 3, 1)
         self.mainLayout.addWidget(self.epsilonText, 6, 1)
         self.mainLayout.addWidget(self.epsilonLabel, 6, 0)
+        self.mainLayout.addWidget(segmentButton, 7, 1)
+        self.mainLayout.addWidget(outputImageLabel, 8, 0)
+        self.mainLayout.addWidget(self.userpath2, 8, 1)
+        self.mainLayout.addWidget(browseButton2, 8, 2)
         self.setLayout(self.mainLayout)
 
         self.featureChanged()
@@ -118,6 +103,22 @@ class Window(QtGui.QWidget):
         filePath = QtGui.QFileDialog.getOpenFileName(self, "Find Files",
                 QtCore.QDir.currentPath())
         self.userpath.setText(filePath)
+
+    def segment(self):
+    	algorithm = self.algorithmComboBox.currentText()
+#      if algorithm == "Mean Shift":
+#				call mean shift with input image self.userpath
+#			elif algorithm == "K-means"
+#				call k-means with input image self.userpath , self.iterationsText , self.kText , self.epsilonText
+#			elif algorithm == "Graph cut"
+		
+    def browse2(self):
+        filePath = QtGui.QFileDialog.getOpenFileName(self, "Find Files",
+                QtCore.QDir.currentPath())
+        self.userpath2.setText(filePath)
+        img = cv.LoadImageM(str(filePath))
+        cv.NamedWindow("Output", 1) ;
+        cv.ShowImage( "Output", img );
 
     def createButton(self, text, member):
         button = QtGui.QPushButton(text)
