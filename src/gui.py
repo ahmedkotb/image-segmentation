@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import cv
-import kmeans
 
 from PyQt4 import QtCore, QtGui
 
@@ -9,10 +8,6 @@ class RenderArea(QtGui.QWidget):
     def __init__(self, path, parent=None):
         super(RenderArea, self).__init__(parent)
 
-        self.path = path
-
-        self.penWidth = 1
-        self.rotationAngle = 0
         self.setBackgroundRole(QtGui.QPalette.Base)
 
     def minimumSizeHint(self):
@@ -163,14 +158,6 @@ class Window(QtGui.QWidget):
           self.iterationsLabel.show()
           self.epsilonLabel.show()
           self.epsilonText.show()
-    def populateWithColors(self, comboBox):
-        colorNames = QtGui.QColor.colorNames()
-        for name in colorNames:
-            comboBox.addItem(name, name)
-
-    def currentItemData(self, comboBox):
-        return comboBox.itemData(comboBox.currentIndex())
-
 
 if __name__ == '__main__':
 
