@@ -22,10 +22,10 @@ INFINITY = 1000000000
 FOREGROUND_COLOR = 0
 BACKGROUND_COLOR = 255
 EPS = 0.0000001
-RGB_DISC = 1.0
-INT_DISC = 1.0
-XLOC_DISC = 5.0
-YLOC_DISC = 5.0
+RGB_DISC = 1
+INT_DISC = 1
+XLOC_DISC = 5
+YLOC_DISC = 5
 #--------------------------------------------------------------------------
 
 def isValid(row, col, maxRow, maxCol):
@@ -36,17 +36,11 @@ def affinity(v1, v2, feature_type):
     dist = 0.0
     if feature_type == "INTENSITY":
         dist = abs(v1[0] - v2[0])
-    elif feature_type == "INTENSITY+LOC":
+    elif feature_type == "INTENSITY+LOC" or feature_type == "RGB" or feature_type == "YUV":
         dx = v1[0] - v2[0]
         dy = v1[1] - v2[1]
         dz = v1[2] - v2[2]
         dist = sqrt(dx * dx + dy * dy + dz * dz)
-    elif feature_type == "RGB" or feature_type == "YUV":
-        dx = v1[0] - v2[0]
-        dy = v1[1] - v2[1]
-        dz = v1[2] - v2[2]
-        dist = sqrt(dx * dx + dy * dy + dz * dz)
-#    //XXX add for other features
 
     sim = math.exp((-1/(2*SIGMA*SIGMA)) * dist * dist)
 #    sim = math.exp((-1/(2*SIGMA*SIGMA)) * dist)
@@ -71,10 +65,10 @@ def constructHist(fv_grid, sample, feature_type):
             x = sample[s][1]
             hist[fv_grid[y, x, 0]/RGB_DISC, fv_grid[y, x, 1]/RGB_DISC, fv_grid[y, x, 2]/RGB_DISC] += 1.0 / slen
     elif feature_type == 'INTENSITY+LOC':
-        dim1 = 256/INT_DISC
-        dim2 = len(fv_grid)/YLOC_DISC
-        dim3 = len(fv_grid[0])/XLOC_DISC
-        hist = zeros(dim1, dim2, dim3)
+        dim1 = 256/INT_DISC + 1
+        dim2 = len(fv_grid)/YLOC_DISC + 1
+        dim3 = len(fv_grid[0])/XLOC_DISC + 1
+        hist = zeros((dim1, dim2, dim3))
         for s in range(0, slen):
             y = sample[s][0]
             x = sample[s][1]
