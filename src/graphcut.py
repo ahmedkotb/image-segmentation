@@ -248,7 +248,8 @@ def graphcut(image_name, feature_type, obj_sample, bk_sample):
     for y in range(0, img.height):
         for x in range(0,img.width):
             if(cut[pixel_to_node[y][x]] == obj):
-                gray[y,x] = FOREGROUND_COLOR
+                #gray[y,x] = FOREGROUND_COLOR
+                gray[y,x] = img[y,x]
             elif(cut[pixel_to_node[y][x]] == bk):
                 gray[y,x] = BACKGROUND_COLOR
 
