@@ -1,7 +1,3 @@
-#from pygraph.classes.graph import *
-#from pygraph.algorithms.searching import *
-
-#mypygraph =  __import__('pygraph.classes.graph')
 import cv
 import math
 import time
@@ -10,6 +6,7 @@ from pygraph.classes.digraph import *
 from pygraph.algorithms.minmax import *
 from pygraph.algorithms.searching import *
 from numpy import *
+#--------------------------------------------------------------------------
 
 dx = [-1,0,1,1,1,0,-1,-1]
 dy = [-1,-1,-1,0,1,1,1,0]
@@ -20,21 +17,16 @@ pixel_to_node = None
 src_hist = None
 dest_hist = None
 SIGMA = 2
-LAMDA = 60
+LAMBDA = 60
 INFINITY = 1000000000
+FOREGROUND_COLOR = 0
+BACKGROUND_COLOR = 255
+EPS = 0.0000001
 #--------------------------------------------------------------------------
 
 def isValid(row, col, maxRow, maxCol):
     return (row >= 0 and row < maxRow and col >= 0 and col < maxCol)
 #--------------------------------------------------------------------------
-#--------------------------------------------------------------------------
-#--------------------------------------------------------------------------
-
-# TODO remove this method .. unused
-def affinityUsingIntensity(int1, int2):
-    dist = abs(int1-int2)
-    sim = math.exp((-1/(2*SIGMA*SIGMA)) * dist * dist)
-    return sim
 
 def affinity(v1, v2, feature_type):
     dist = 0.0
@@ -56,32 +48,31 @@ def affinity(v1, v2, feature_type):
     return sim
 #--------------------------------------------------------------------------
 
-def constructHist(fv_grid, sample, type):
+def constructHist(fv_grid, sample, feature_type):
     hist = None
     slen = len(sample)
     n = len(fv_grid[0][0])
     
-    if type == 'INTENSITY':
+    if feature_type == 'INTENSITY':
         hist = zeros((256))
     
         for s in range(0, slen):
             for i in range(0, n):
                 hist[fv_grid[sample[s][0],sample[s][1],i]] += 1.0 / slen
-#        for y in range(0, len(fv_grid)):
-#            for x in range(0, len(fv_grid[0])):
-#                for i in range(0, n):
-#                    hist[fv_grid[y,x,i]] += 1
-
+    #//XXX add for other features
                 
-#    print hist
     return hist    
 #--------------------------------------------------------------------------
 
 def regionalCost(feature_vector, hist, feature_type):
     cost = 0
     if feature_type == 'INTENSITY':
-        cost = LAMBDA * hist[feature_vector[0]]
-        
+        if hist[feature_vector[0]] < EPS:
+            cost = INFINITY
+        else:
+            cost = LAMBDA * -1 * math.log(hist[feature_vector[0]])
+#   //XXX add for other features
+     
     return cost
 #--------------------------------------------------------------------------
 
@@ -157,7 +148,6 @@ def constructNodes(fv_map, gr, feature_type):
             gr.add_nodes([node_name])
     
     gr.add_nodes([dest])
-
 #--------------------------------------------------------------------------
 
 def construct_feature_vector(image, feature_type):
@@ -186,17 +176,16 @@ def construct_feature_vector(image, feature_type):
     return v
 #--------------------------------------------------------------------------
 
-def constructGraph(img, feature_type, obj_sample, bk_smaple):
+def constructGraph(img, feature_type, obj_sample, bk_sample):
     global gr
     global src_hist
     global dest_hist
     gr = digraph()
     feature_vectors = construct_feature_vector(img, feature_type)
     src_hist = constructHist(feature_vectors, obj_sample, feature_type)
-    dest_hist = constructHist(feature_vectors, bk_smaple, feature_type)
+    dest_hist = constructHist(feature_vectors, bk_sample, feature_type)
     constructNodes(feature_vectors, gr, feature_type)
     constructEdges(feature_vectors, gr, pixel_to_node, feature_type, obj_sample, bk_sample)
-    
 #--------------------------------------------------------------------------
 
 def construct_graph(image, feature_type):
@@ -205,26 +194,6 @@ def construct_graph(image, feature_type):
     feature_vector = construct_feature_vector(image, feature_type)
     constructNodes(feature_vector, gr, feature_type)
     constructEdges(feature_vector, gr, pixel_to_node, feature_type)
-#    constructNodes(image, gr, feature_type)
-#    constructEdges(image, gr, pixel_to_node, feature_type)
-#    st, pre, post = depth_first_search(gr, root='n1')
-#    print 'pre ', pre
-
-#--------------------------------------------------------------------------
-
-def graphcutUsingIntensity(image):
-    construct_graph(image, "INTENSITY")
-    _, cut = maximum_flow(gr, src, dest);
-    print cut
-    obj = cut[src]
-    bk = cut[dest]
-    print obj, bk
-    for y in range(0, image.height):
-        for x in range(0,image.width):
-            if(cut[pixel_to_node[y][x]] == obj):
-                image[y,x] = 255
-            elif(cut[pixel_to_node[y][x]] == bk):
-                image[y,x] = 0
 #--------------------------------------------------------------------------
 
 def graphcut(image_name, feature_type, obj_sample, bk_sample):
@@ -232,51 +201,42 @@ def graphcut(image_name, feature_type, obj_sample, bk_sample):
     img = None
     if feature_type == "INTENSITY":
         img = cv.LoadImageM(image_name,cv.CV_LOAD_IMAGE_GRAYSCALE)
-#        graphcutUsingIntensity(img)
     elif feature_type == "INTENSITY+LOC":
         img = cv.LoadImageM(image_name,cv.CV_LOAD_IMAGE_GRAYSCALE)
-#        graphcutUsingIntensityAndLocation(img)
     elif feature_type == "RGB":
         img = cv.LoadImageM(image_name,cv.CV_LOAD_IMAGE_COLOR)
-#        graphUsingRGB(img)
     elif feature_type == "YUV":
         img = cv.LoadImageM(image_name,cv.CV_LOAD_IMAGE_COLOR)
-#        graphcutUsingYUV(img)
     elif feature_type == "LM":
         img = cv.LoadImageM(image_name,cv.CV_LOAD_IMAGE_COLOR)
-#        graphcutUsingLM(img)
     elif feature_type == "ILM":
         img = cv.LoadImageM(image_name,cv.CV_LOAD_IMAGE_COLOR)
-#        graphcutUsingILM(img)
     
     constructGraph(img, feature_type, obj_sample, bk_sample)
+
+    print "start max_flow"
+    _, cut = maximum_flow(gr, src, dest);
+    obj = cut[src]
+    bk = cut[dest]
+    for y in range(0, img.height):
+        for x in range(0,img.width):
+            if(cut[pixel_to_node[y][x]] == obj):
+                img[y,x] = FOREGROUND_COLOR
+            elif(cut[pixel_to_node[y][x]] == bk):
+                img[y,x] = BACKGROUND_COLOR
+
     
     end = time.time()
 
     print "time",end - start,"seconds"
 
     return img
-
 #--------------------------------------------------------------------------
+
 def segmentUsingGraphcut(img_name, feature_type, obj_sample, bk_sample):
     print "image name =", img_name
-    img = None
     img = graphcut(img_name, feature_type, obj_sample, bk_sample)
     cv.ShowImage("img",img)
     cv.WaitKey(0)
     cv.SaveImage("output.jpg", img)
-#name = "../test images/single object/189080.jpg"
-#name = "../test images/single object/285079.jpg"
-#name = "../lm_images/square2.gif"
-#name = "../lm_images/square1.png"
-#name = "../lm_images/grayscale1_2.png"
-#print "img name = ",name
-#
-#img = None
-#img = graphcut(name,"INTENSITY", None, None)
-#
-#cv.ShowImage("img",img)
-#cv.WaitKey(0)
-#
-#cv.SaveImage("output.jpg", img)
-
+#--------------------------------------------------------------------------
