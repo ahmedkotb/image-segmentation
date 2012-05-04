@@ -38,7 +38,7 @@ def affinity(v1, v2, feature_type):
         dy = v1[1] - v2[1]
         dz = v1[2] - v2[2]
         dist = sqrt(dx * dx + dy * dy + dz * dz)
-    elif feature_type == "RGB" || feature_type = "YUV":
+    elif feature_type == "RGB" or feature_type == "YUV":
         dx = v1[0] - v2[0]
         dy = v1[1] - v2[1]
         dz = v1[2] - v2[2]
@@ -54,13 +54,13 @@ def constructHist(fv_grid, sample, feature_type):
     hist = None
     slen = len(sample)
     n = len(fv_grid[0][0])
-    
+
     if feature_type == 'INTENSITY':
         hist = zeros((256))
         for s in range(0, slen):
             for i in range(0, n):
                 hist[fv_grid[sample[s][0],sample[s][1],i]] += 1.0 / slen
-    elif feature_type == 'RGB' || feature_type == 'YUV':
+    elif feature_type == 'RGB' or feature_type == 'YUV':
         dim = 256/RGB_DISC
         hist = zeros ((dim, dim, dim))
         for s in range(0, slen):
@@ -69,8 +69,8 @@ def constructHist(fv_grid, sample, feature_type):
             hist[fv_grid[y, x, 0]/RGB_DISC, fv_grid[y, x, 1]/RGB_DISC, fv_grid[y, x, 2]/RGB_DISC] += 1.0 / slen
 
     #//XXX add for other features
-                
-    return hist    
+
+    return hist
 #--------------------------------------------------------------------------
 
 def regionalCost(feature_vector, hist, feature_type):
@@ -86,7 +86,7 @@ def regionalCost(feature_vector, hist, feature_type):
         else:
             cost = LAMBDA * -1 * math.log(hist[feature_vector[0]/RGB_DISC, feature_vector[1]/RGB_DISC, feature_vector[2]/RGB_DISC])
 #   //XXX add for other features
-     
+
     return cost
 #--------------------------------------------------------------------------
 
@@ -95,7 +95,7 @@ def constructTLinks(fv_grid, gr, pixel_to_node, feature_type, obj_sample, bk_sam
     bk_index = 0
     objlen = len(obj_sample)
     bklen = len(bk_sample)
-    
+
     height = len(fv_grid)
     width = len(fv_grid[0])
     for y in range(0,height):
@@ -160,7 +160,7 @@ def constructNodes(fv_grid, gr, feature_type):
             index += 1
             pixel_to_node[y].append(node_name)
             gr.add_nodes([node_name])
-    
+
     gr.add_nodes([dest])
 #--------------------------------------------------------------------------
 
@@ -174,7 +174,7 @@ def constructFeatureVector(image, feature_type):
         v = zeros((image.height,image.width,3))
     elif feature_type == "YUV":
         v = zeros((image.height,image.width,3))
-    
+
     for y in range(0,image.height):
         for x in range(0, image.width):
             if feature_type == "INTENSITY":
@@ -183,7 +183,7 @@ def constructFeatureVector(image, feature_type):
                 v[y,x,0] = image[y,x]
                 v[y,x,1] = y
                 v[y,x,2] = x
-            elif feature_type == "RGB" || feature_type == "YUV":
+            elif feature_type == "RGB" or feature_type == "YUV":
                 v[y,x,0] = image[y,x][0]
                 v[y,x,1] = image[y,x][1]
                 v[y,x,2] = image[y,x][2]
@@ -223,7 +223,7 @@ def graphcut(image_name, feature_type, obj_sample, bk_sample):
     elif feature_type == "YUV":
         img = cv.LoadImageM(image_name,cv.CV_LOAD_IMAGE_COLOR)
         cv.CvtColor(im,im,cv.CV_BGR2YCrCb)
-        
+
     constructGraph(img, feature_type, obj_sample, bk_sample)
 
     print "start max_flow"
@@ -237,7 +237,7 @@ def graphcut(image_name, feature_type, obj_sample, bk_sample):
             elif(cut[pixel_to_node[y][x]] == bk):
                 img[y,x] = BACKGROUND_COLOR
 
-    
+
     end = time.time()
 
     print "time",end - start,"seconds"
