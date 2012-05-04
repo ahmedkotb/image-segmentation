@@ -57,7 +57,7 @@ def constructHist(fv_grid, sample, feature_type):
     hist = None
     slen = len(sample)
     n = len(fv_grid[0][0])
-    
+
     if feature_type == 'INTENSITY':
         hist = zeros((256))
         for s in range(0, slen):
@@ -109,7 +109,7 @@ def constructTLinks(fv_grid, gr, pixel_to_node, feature_type, obj_sample, bk_sam
     bk_index = 0
     objlen = len(obj_sample)
     bklen = len(bk_sample)
-    
+
     height = len(fv_grid)
     width = len(fv_grid[0])
     for y in range(0,height):
@@ -174,7 +174,7 @@ def constructNodes(fv_grid, gr, feature_type):
             index += 1
             pixel_to_node[y].append(node_name)
             gr.add_nodes([node_name])
-    
+
     gr.add_nodes([dest])
 #--------------------------------------------------------------------------
 
@@ -188,7 +188,7 @@ def constructFeatureVector(image, feature_type):
         v = zeros((image.height,image.width,3))
     elif feature_type == "YUV":
         v = zeros((image.height,image.width,3))
-    
+
     for y in range(0,image.height):
         for x in range(0, image.width):
             if feature_type == "INTENSITY":
@@ -253,7 +253,7 @@ def graphcut(image_name, feature_type, obj_sample, bk_sample):
             elif(cut[pixel_to_node[y][x]] == bk):
                 gray[y,x] = BACKGROUND_COLOR
 
-    
+
     end = time.time()
 
     print "time",end - start,"seconds"
