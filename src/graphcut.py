@@ -16,13 +16,16 @@ dest = None
 pixel_to_node = None
 src_hist = None
 dest_hist = None
-SIGMA = 2
+SIGMA = 2.0
 LAMBDA = 60
 INFINITY = 1000000000
 FOREGROUND_COLOR = 0
 BACKGROUND_COLOR = 255
 EPS = 0.0000001
-RGB_DISC = 1
+RGB_DISC = 1.0
+INT_DISC = 1.0
+XLOC_DISC = 5.0
+YLOC_DISC = 5.0
 #--------------------------------------------------------------------------
 
 def isValid(row, col, maxRow, maxCol):
@@ -38,7 +41,7 @@ def affinity(v1, v2, feature_type):
         dy = v1[1] - v2[1]
         dz = v1[2] - v2[2]
         dist = sqrt(dx * dx + dy * dy + dz * dz)
-    elif feature_type == "RGB" || feature_type = "YUV":
+    elif feature_type == "RGB" or feature_type == "YUV":
         dx = v1[0] - v2[0]
         dy = v1[1] - v2[1]
         dz = v1[2] - v2[2]
@@ -60,15 +63,22 @@ def constructHist(fv_grid, sample, feature_type):
         for s in range(0, slen):
             for i in range(0, n):
                 hist[fv_grid[sample[s][0],sample[s][1],i]] += 1.0 / slen
-    elif feature_type == 'RGB' || feature_type == 'YUV':
+    elif feature_type == 'RGB' or feature_type == 'YUV':
         dim = 256/RGB_DISC
         hist = zeros ((dim, dim, dim))
         for s in range(0, slen):
             y = sample[s][0]
             x = sample[s][1]
             hist[fv_grid[y, x, 0]/RGB_DISC, fv_grid[y, x, 1]/RGB_DISC, fv_grid[y, x, 2]/RGB_DISC] += 1.0 / slen
-
-    #//XXX add for other features
+    elif feature_type == 'INTENSITY+LOC':
+        dim1 = 256/INT_DISC
+        dim2 = len(fv_grid)/YLOC_DISC
+        dim3 = len(fv_grid[0])/XLOC_DISC
+        hist = zeros(dim1, dim2, dim3)
+        for s in range(0, slen):
+            y = sample[s][0]
+            x = sample[s][1]
+            hist[fv_grid[y, x, 0]/INT_DISC, y/YLOC_DISC, x/XLOC_DISC] += 1.0 / slen
                 
     return hist    
 #--------------------------------------------------------------------------
@@ -81,11 +91,15 @@ def regionalCost(feature_vector, hist, feature_type):
         else:
             cost = LAMBDA * -1 * math.log(hist[feature_vector[0]])
     elif feature_type == 'RGB' or feature_type == 'YUV':
-        if hist[feature_vector[0, 0, 0]] < EPS:
+        if hist[feature_vector[0]/RGB_DISC, feature_vector[1]/RGB_DISC, feature_vector[2]/RGB_DISC] < EPS:
             cost = INFINITY
         else:
             cost = LAMBDA * -1 * math.log(hist[feature_vector[0]/RGB_DISC, feature_vector[1]/RGB_DISC, feature_vector[2]/RGB_DISC])
-#   //XXX add for other features
+    elif feature_type == 'INTENSITY+LOC':
+        if hist[feature_vector[0]/INT_DISC, feature_vector[1]/YLOC_DISC, feature_vector[2]/XLOC_DISC] < EPS:
+            cost = INFINITY
+        else:
+            cost = LAMBDA * -1 * math.log(hist[feature_vector[0]/INT_DISC, feature_vector[1]/YLOC_DISC, feature_vector[2]/XLOC_DISC])
      
     return cost
 #--------------------------------------------------------------------------
@@ -183,7 +197,7 @@ def constructFeatureVector(image, feature_type):
                 v[y,x,0] = image[y,x]
                 v[y,x,1] = y
                 v[y,x,2] = x
-            elif feature_type == "RGB" || feature_type == "YUV":
+            elif feature_type == "RGB" or feature_type == "YUV":
                 v[y,x,0] = image[y,x][0]
                 v[y,x,1] = image[y,x][1]
                 v[y,x,2] = image[y,x][2]
@@ -222,27 +236,29 @@ def graphcut(image_name, feature_type, obj_sample, bk_sample):
         img = cv.LoadImageM(image_name,cv.CV_LOAD_IMAGE_COLOR)
     elif feature_type == "YUV":
         img = cv.LoadImageM(image_name,cv.CV_LOAD_IMAGE_COLOR)
-        cv.CvtColor(im,im,cv.CV_BGR2YCrCb)
+        cv.CvtColor(img,img,cv.CV_BGR2YCrCb)
         
     constructGraph(img, feature_type, obj_sample, bk_sample)
 
     print "start max_flow"
     _, cut = maximum_flow(gr, src, dest);
+    print cut
+    gray = cv.LoadImageM(image_name,cv.CV_LOAD_IMAGE_GRAYSCALE)
     obj = cut[src]
     bk = cut[dest]
     for y in range(0, img.height):
         for x in range(0,img.width):
             if(cut[pixel_to_node[y][x]] == obj):
-                img[y,x] = FOREGROUND_COLOR
+                gray[y,x] = FOREGROUND_COLOR
             elif(cut[pixel_to_node[y][x]] == bk):
-                img[y,x] = BACKGROUND_COLOR
+                gray[y,x] = BACKGROUND_COLOR
 
     
     end = time.time()
 
     print "time",end - start,"seconds"
 
-    return img
+    return gray
 #--------------------------------------------------------------------------
 
 def segmentUsingGraphcut(img_name, feature_type, obj_sample, bk_sample):
