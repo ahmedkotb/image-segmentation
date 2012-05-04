@@ -295,9 +295,9 @@ def kmeansUsingPCA(im,k,iterations,epsilon):
         lbl = labels[i,0]
         col[i,0] = means[lbl]
 #-------------------------------------------------------------
-def kmeans(image_name,feature,k,iterations,epsilon):
+def kmeans(name,feature,k,iterations,epsilon):
+    print feature
     start = time.time()
-
     im = None
     if feature == "INTENSITY":
         im = cv.LoadImageM(name,cv.CV_LOAD_IMAGE_GRAYSCALE)

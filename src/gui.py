@@ -2,6 +2,8 @@
 import cv
 
 from PyQt4 import QtCore, QtGui
+import kmeans
+import cv
 
 
 class RenderArea(QtGui.QWidget):
@@ -17,7 +19,6 @@ class RenderArea(QtGui.QWidget):
         return QtCore.QSize(100, 100)
 
 class Window(QtGui.QWidget):
-    NumRenderAreas = 9
 
     def __init__(self):
         super(Window, self).__init__()
@@ -30,7 +31,6 @@ class Window(QtGui.QWidget):
         self.algorithmComboBox = QtGui.QComboBox()
         self.algorithmComboBox.addItem("K-means")
         self.algorithmComboBox.addItem("Mean Shift")
-        self.algorithmComboBox.addItem("Graph Cut")
 
         algorithm = QtGui.QLabel("&Algorithm:")
         algorithm.setBuddy(self.algorithmComboBox)
@@ -40,20 +40,20 @@ class Window(QtGui.QWidget):
         self.featureComboBox.addItem("Intensity and pixel coordinates")
         self.featureComboBox.addItem("RGB color")
         self.featureComboBox.addItem("YUV color")
+        self.featureComboBox.addItem("Leung-Malik")
         self.featureComboBox.addItem("Invariant LM")
         self.featureComboBox.addItem("PCA")
-        self.featureComboBox.addItem("Leung-Malik")
         feature = QtGui.QLabel("&Feature:")
         feature.setBuddy(self.featureComboBox)
-        self.userpath = QtGui.QLineEdit()
+        self.userpath = QtGui.QLineEdit("../test images/single object/189080.jpg")
         self.userpath2 = QtGui.QLineEdit()
-        self.kText = QtGui.QLineEdit()
+        self.kText = QtGui.QLineEdit("3")
 
         self.kLabel = QtGui.QLabel("&K:")
         self.kLabel.setBuddy(self.kText)
 
-        self.iterationsText = QtGui.QLineEdit()
-        self.epsilonText = QtGui.QLineEdit()
+        self.iterationsText = QtGui.QLineEdit("200")
+        self.epsilonText = QtGui.QLineEdit("0.01")
 
         self.iterationsLabel = QtGui.QLabel("&Number Of Iterations:")
         self.iterationsLabel.setBuddy(self.iterationsText)
@@ -101,12 +101,26 @@ class Window(QtGui.QWidget):
 
     def segment(self):
     	algorithm = self.algorithmComboBox.currentText()
-#      if algorithm == "Mean Shift":
-#				call mean shift with input image self.userpath
-#			elif algorithm == "K-means"
-#				call k-means with input image self.userpath , self.iterationsText , self.kText , self.epsilonText
-#			elif algorithm == "Graph cut"
-		
+        imgPath = str(self.userpath.text())
+        index = self.featureComboBox.currentIndex()
+        features = ["INTENSITY","INTENSITY+LOC","RGB","YUV","LM",
+                "ILM","PCA"]
+        if algorithm == "K-means":
+            k = int(self.kText.text())
+            iterations = int(self.iterationsText.text())
+            epsilon = float(self.epsilonText.text())
+            print imgPath,index,k,iterations,epsilon
+            org = cv.LoadImageM(imgPath)
+            im = kmeans.kmeans(imgPath,features[index],k,iterations,epsilon)
+            cv.ShowImage("original",org)
+            cv.ShowImage("segmented",im)
+        elif algorithm == "Mean Shift":
+            if index == 4:
+                QtGui.QMessageBox.information(self, 'Error',
+                        'LM is not supported in mean shift')
+                return
+
+
     def browse2(self):
         filePath = QtGui.QFileDialog.getOpenFileName(self, "Find Files",
                 QtCore.QDir.currentPath())
@@ -134,15 +148,6 @@ class Window(QtGui.QWidget):
     def algorithmChanged(self):
         algorithm = self.algorithmComboBox.currentText()
         if algorithm == "Mean Shift":
-          self.featureComboBox.removeItem(6)
-          self.kText.hide()
-          self.kLabel.hide()
-          self.iterationsText.hide()
-          self.iterationsLabel.hide()
-          self.epsilonLabel.hide()
-          self.epsilonText.hide()
-        elif algorithm == "Graph Cut":
-          self.featureComboBox.removeItem(6)
           self.kText.hide()
           self.kLabel.hide()
           self.iterationsText.hide()
@@ -150,8 +155,6 @@ class Window(QtGui.QWidget):
           self.epsilonLabel.hide()
           self.epsilonText.hide()
         elif algorithm == "K-means":
-          if self.featureComboBox.count() == 6:
-          	self.featureComboBox.addItem("Leung-Malik")
           self.kText.show()
           self.kLabel.show()
           self.iterationsText.show()
