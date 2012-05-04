@@ -74,9 +74,9 @@ class MainWidget(QtGui.QWidget):
         self.segmentbtn.clicked.connect(self.startSegmentation)
 
     def startSegmentation(self):
-        w = self.pixmap_item.boundingRect().width()
-        h = self.pixmap_item.boundingRect().height()
-        print w,h
+        imgW = self.pixmap_item.boundingRect().width()
+        imgH = self.pixmap_item.boundingRect().height()
+        print imgW,imgH
 
         background = []
         object = []
@@ -90,10 +90,18 @@ class MainWidget(QtGui.QWidget):
 
             for i in xrange(x,x + w):
                 for j in xrange(y,y + h):
+                    if j >= imgH or i >= imgW or i < 0 or j < 0:
+                        continue
                     if type(box) == BackgroundBox:
                         background.append((j,i))
                     else:
                         object.append((j,i))
+
+        #sort the pixels by the first coordinate then second cordinate
+        #first coordinate  (0 --> image height)
+        #second coordinate (0 --> image width)
+        object.sort()
+        background.sort()
         print "object pixels count",len(object)
         print "background pixels count",len(background)
 
