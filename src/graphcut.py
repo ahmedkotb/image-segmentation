@@ -6,6 +6,9 @@ from pygraph.classes.digraph import *
 from pygraph.algorithms.minmax import *
 from pygraph.algorithms.searching import *
 from numpy import *
+import graphtools
+
+import subprocess
 #--------------------------------------------------------------------------
 
 dx = [-1,0,1,1,1,0,-1,-1]
@@ -73,8 +76,8 @@ def constructHist(fv_grid, sample, feature_type):
             y = sample[s][0]
             x = sample[s][1]
             hist[fv_grid[y, x, 0]/INT_DISC, y/YLOC_DISC, x/XLOC_DISC] += 1.0 / slen
-                
-    return hist    
+
+    return hist
 #--------------------------------------------------------------------------
 
 def regionalCost(feature_vector, hist, feature_type):
@@ -94,7 +97,7 @@ def regionalCost(feature_vector, hist, feature_type):
             cost = INFINITY
         else:
             cost = LAMBDA * -1 * math.log(hist[feature_vector[0]/INT_DISC, feature_vector[1]/YLOC_DISC, feature_vector[2]/XLOC_DISC])
-     
+
     return cost
 #--------------------------------------------------------------------------
 
@@ -231,12 +234,14 @@ def graphcut(image_name, feature_type, obj_sample, bk_sample):
     elif feature_type == "YUV":
         img = cv.LoadImageM(image_name,cv.CV_LOAD_IMAGE_COLOR)
         cv.CvtColor(img,img,cv.CV_BGR2YCrCb)
-        
+
     constructGraph(img, feature_type, obj_sample, bk_sample)
 
     print "start max_flow"
-    _, cut = maximum_flow(gr, src, dest);
-    print cut
+    graphtools.write(gr,"temp",src,dest)
+    subprocess.call(["sh","solver.sh", 'temp','temp.out'])
+    cut = graphtools.parse("temp.out",src,dest)
+    #_, cut = maximum_flow(gr, src, dest);
     gray = cv.LoadImageM(image_name,cv.CV_LOAD_IMAGE_GRAYSCALE)
     obj = cut[src]
     bk = cut[dest]
