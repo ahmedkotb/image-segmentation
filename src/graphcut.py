@@ -242,23 +242,26 @@ def graphcut(image_name, feature_type, obj_sample, bk_sample):
     subprocess.call(["sh","solver.sh", 'temp','temp.out'])
     cut = graphtools.parse("temp.out",src,dest)
     #_, cut = maximum_flow(gr, src, dest);
-    gray = cv.LoadImageM(image_name,cv.CV_LOAD_IMAGE_GRAYSCALE)
+    result = cv.LoadImageM(image_name,cv.CV_LOAD_IMAGE_COLOR)
     obj = cut[src]
     bk = cut[dest]
     for y in range(0, img.height):
         for x in range(0,img.width):
             if(cut[pixel_to_node[y][x]] == obj):
                 #gray[y,x] = FOREGROUND_COLOR
-                gray[y,x] = img[y,x]
+                if img.channels == 3:
+                    result[y,x] = img[y,x]
+                else:
+                    result[y,x] = [img[y,x]]*3
             elif(cut[pixel_to_node[y][x]] == bk):
-                gray[y,x] = BACKGROUND_COLOR
+                result[y,x] = [BACKGROUND_COLOR]*3
 
 
     end = time.time()
 
     print "time",end - start,"seconds"
 
-    return gray
+    return result
 #--------------------------------------------------------------------------
 
 def segmentUsingGraphcut(img_name, feature_type, obj_sample, bk_sample):
