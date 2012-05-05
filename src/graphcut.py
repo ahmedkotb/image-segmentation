@@ -8,6 +8,8 @@ from pygraph.algorithms.searching import *
 from numpy import *
 import graphtools
 
+import lmfilters
+from pca import *
 import subprocess
 #--------------------------------------------------------------------------
 
@@ -44,6 +46,12 @@ def affinity(v1, v2, feature_type):
         dy = v1[1] - v2[1]
         dz = v1[2] - v2[2]
         dist = sqrt(dx * dx + dy * dy + dz * dz)
+    elif feature_type in ["ILM","PCA"]:
+        dx = v1[0] - v2[0]
+        dy = v1[1] - v2[1]
+        dz = v1[2] - v2[2]
+        dk = v1[3] - v2[3]
+        dist = sqrt(dx * dx + dy * dy + dz * dz + dk * dk)
 
     sim = math.exp((-1/(2*SIGMA*SIGMA)) * dist * dist)
 #    sim = math.exp((-1/(2*SIGMA*SIGMA)) * dist)
@@ -185,20 +193,84 @@ def constructFeatureVector(image, feature_type):
         v = zeros((image.height,image.width,3))
     elif feature_type == "YUV":
         v = zeros((image.height,image.width,3))
+    elif feature_type == "ILM":
+        v = zeros((image.height,image.width,4))
+    elif feature_type == "PCA":
+        v = zeros((image.height,image.width,4))
 
-    for y in range(0,image.height):
-        for x in range(0, image.width):
-            if feature_type == "INTENSITY":
-                v[y,x,0] = image[y,x]
-            elif feature_type == "INTENSITY+LOC":
-                v[y,x,0] = image[y,x]
-                v[y,x,1] = y
-                v[y,x,2] = x
-            elif feature_type == "RGB" or feature_type == "YUV":
-                v[y,x,0] = image[y,x][0]
-                v[y,x,1] = image[y,x][1]
-                v[y,x,2] = image[y,x][2]
-            # add more features here
+    def getFilterTypeIndex(index):
+        if index >=0 and index <= 17:
+            return 0
+        elif index >= 18 and index <= 35:
+            return 1
+        elif index >= 36 and index <= 45:
+            return 2
+        else:
+            return 3
+
+    if feature_type in ["INTENSITY","INTENSITY+LOC","RGB","YUV"]:
+        for y in range(0,image.height):
+            for x in range(0, image.width):
+                if feature_type == "INTENSITY":
+                    v[y,x,0] = image[y,x]
+                elif feature_type == "INTENSITY+LOC":
+                    v[y,x,0] = image[y,x]
+                    v[y,x,1] = y
+                    v[y,x,2] = x
+                elif feature_type == "RGB" or feature_type == "YUV":
+                    v[y,x,0] = image[y,x][0]
+                    v[y,x,1] = image[y,x][1]
+                    v[y,x,2] = image[y,x][2]
+    elif feature_type == "ILM":
+        filterBank = lmfilters.loadLMFilters()
+        for f in xrange(0,48):
+            filter = filterBank[f]
+            dst = cv.CreateImage(cv.GetSize(image), cv.IPL_DEPTH_32F, 3)
+            cv.Filter2D(image,dst,filter)
+            featureIndex = getFilterTypeIndex(f)
+            for j in xrange(0,image.height):
+                for i in xrange(0,image.width):
+                    #take the maximum response from the 3 channels
+                    maxRes = max(dst[j,i])
+                    if math.isnan(maxRes):
+                        maxRes = 0.0
+                    #take the maximun over this feature
+                    if maxRes > v[j,i,featureIndex]:
+                        v[j,i,featureIndex] = maxRes
+    elif feature_type == "PCA":
+        filterBank = lmfilters.loadLMFilters()
+        samples = zeros([image.width*image.height,51])
+        #lm filters features
+        for f in xrange(0,48):
+            filter = filterBank[f]
+            dst = cv.CreateImage(cv.GetSize(image), cv.IPL_DEPTH_32F, 3)
+            cv.Filter2D(image,dst,filter)
+            count = 0
+            for j in xrange(0,image.height):
+                for i in xrange(0,image.width):
+                    #take the maximum response from the 3 channels
+                    maxRes = max(dst[j,i])
+                    if math.isnan(maxRes):
+                        maxRes = 0.0
+                    samples[count,f] = maxRes
+                    count+=1
+
+        #yuv features
+        count = 0
+        for j in xrange(0,image.height):
+            for i in xrange(0,image.width):
+                samples[count,48] = image[j,i][0]
+                samples[count,49] = image[j,i][1]
+                samples[count,50] = image[j,i][2]
+                count+=1
+        #get the first 4 primary components using pca
+        count = 0
+        pca = PCA(samples)
+        for j in xrange(0,image.height):
+            for i in xrange(0,image.width):
+                v[j,i] = pca.getPCA(samples[count],4)
+                count+=1
+
     return v
 #--------------------------------------------------------------------------
 
@@ -229,9 +301,9 @@ def graphcut(image_name, feature_type, obj_sample, bk_sample):
         img = cv.LoadImageM(image_name,cv.CV_LOAD_IMAGE_GRAYSCALE)
     elif feature_type == "INTENSITY+LOC":
         img = cv.LoadImageM(image_name,cv.CV_LOAD_IMAGE_GRAYSCALE)
-    elif feature_type == "RGB":
+    elif feature_type == "RGB" or feature_type == "ILM":
         img = cv.LoadImageM(image_name,cv.CV_LOAD_IMAGE_COLOR)
-    elif feature_type == "YUV":
+    elif feature_type == "YUV" or feature_type == "PCA":
         img = cv.LoadImageM(image_name,cv.CV_LOAD_IMAGE_COLOR)
         cv.CvtColor(img,img,cv.CV_BGR2YCrCb)
 

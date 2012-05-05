@@ -5,9 +5,10 @@ import graphcut
 
 from PyQt4 import QtCore, QtGui
 
-#IMG_PATH = "../test images/single object/189080.jpg"
 IMG_PATH = "../lm_images/grayscale2.jpg"
 IMG_PATH = "../lm_images/grayscale1_2.png"
+IMG_PATH = "../test images/single object/189080.jpg"
+IMG_PATH = "../test images/single object/285079.jpg"
 feature_type = 'INTENSITY'
 
 RECT_WIDTH = 10
