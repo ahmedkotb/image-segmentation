@@ -86,6 +86,16 @@ class MainWidget(QtGui.QWidget):
         layout.addWidget(self.segmentbtn)
         self.segmentbtn.clicked.connect(self.startSegmentation)
 
+        self.clearbtn = QtGui.QPushButton("Clear",self)
+        layout.addWidget(self.clearbtn)
+        self.clearbtn.clicked.connect(self.clearAction)
+
+
+    def clearAction(self):
+        for box in self.boxes:
+            self.scene.removeItem(box)
+        self.boxes = []
+
     def startSegmentation(self):
         imgW = self.pixmap_item.boundingRect().width()
         imgH = self.pixmap_item.boundingRect().height()
