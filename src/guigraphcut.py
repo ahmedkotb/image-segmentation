@@ -54,6 +54,10 @@ class MainWidget(QtGui.QWidget):
         self.view = QtGui.QGraphicsView(self.scene)
         layout = QtGui.QVBoxLayout()
 
+        self.browsebtn = QtGui.QPushButton("Browse",self)
+        self.browsebtn.clicked.connect(self.browse)
+        layout.addWidget(self.browsebtn)
+
         self.featureComboBox = QtGui.QComboBox()
         self.featureComboBox.addItem("Intensity")
         self.featureComboBox.addItem("Intensity and pixel coordinates")
@@ -90,6 +94,16 @@ class MainWidget(QtGui.QWidget):
         layout.addWidget(self.clearbtn)
         self.clearbtn.clicked.connect(self.clearAction)
 
+
+    def browse(self):
+        global IMG_PATH
+        IMG_PATH = str(QtGui.QFileDialog.getOpenFileName(self, "Find Files",
+                QtCore.QDir.currentPath()))
+        self.clearAction()
+        self.scene.clear()
+        self.pixmap_item = QtGui.QGraphicsPixmapItem(QtGui.QPixmap(IMG_PATH)
+                , None, self.scene)
+        self.pixmap_item.mousePressEvent = self.pixelSelect
 
     def clearAction(self):
         for box in self.boxes:
