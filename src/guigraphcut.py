@@ -9,7 +9,6 @@ IMG_PATH = "../lm_images/grayscale2.jpg"
 IMG_PATH = "../lm_images/grayscale1_2.png"
 IMG_PATH = "../test images/single object/189080.jpg"
 IMG_PATH = "../test images/single object/285079.jpg"
-feature_type = 'INTENSITY'
 
 RECT_WIDTH = 10
 RECT_HEIGHT= 10
@@ -54,6 +53,15 @@ class MainWidget(QtGui.QWidget):
         self.scene = QtGui.QGraphicsScene()
         self.view = QtGui.QGraphicsView(self.scene)
         layout = QtGui.QVBoxLayout()
+
+        self.featureComboBox = QtGui.QComboBox()
+        self.featureComboBox.addItem("Intensity")
+        self.featureComboBox.addItem("Intensity and pixel coordinates")
+        self.featureComboBox.addItem("RGB color")
+        self.featureComboBox.addItem("YUV color")
+        self.featureComboBox.addItem("Invariant LM")
+        self.featureComboBox.addItem("PCA")
+        layout.addWidget(self.featureComboBox)
 
         self.backbtn = QtGui.QPushButton("Background",self)
         self.objbtn = QtGui.QPushButton("Object",self)
@@ -109,7 +117,10 @@ class MainWidget(QtGui.QWidget):
         background.sort()
         print "object pixels count",len(object)
         print "background pixels count",len(background)
-        graphcut.segmentUsingGraphcut(IMG_PATH, feature_type, object, background)
+        features = ["INTENSITY","INTENSITY+LOC","RGB","YUV","ILM","PCA"]
+        selectedFeature = features[self.featureComboBox.currentIndex()]
+        print selectedFeature
+        graphcut.segmentUsingGraphcut(IMG_PATH, selectedFeature, object, background)
 
     def changeMode(self,event):
         source = self.sender()
