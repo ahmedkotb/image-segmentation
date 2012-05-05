@@ -133,8 +133,9 @@ def constructTLinks(fv_grid, gr, pixel_to_node, feature_type, obj_sample, bk_sam
             else:
                 scost = regionalCost(fv_grid[y][x], dest_hist, feature_type)
                 tcost = regionalCost(fv_grid[y][x], src_hist, feature_type)
-            gr.add_edge((src, crnt), scost)
-            gr.add_edge((crnt, dest), tcost)
+            #gr.add_edge((src, crnt), scost)
+            #gr.add_edge((crnt, dest), tcost)
+            gr.add_tedge(crnt,scost,tcost)
 
 #--------------------------------------------------------------------------
 
@@ -278,7 +279,8 @@ def constructGraph(img, feature_type, obj_sample, bk_sample):
     global gr
     global src_hist
     global dest_hist
-    gr = digraph()
+    #gr = digraph()
+    gr = graphtools.FileGraph()
     feature_vectors = constructFeatureVector(img, feature_type)
     src_hist = constructHist(feature_vectors, obj_sample, feature_type)
     dest_hist = constructHist(feature_vectors, bk_sample, feature_type)
@@ -288,7 +290,8 @@ def constructGraph(img, feature_type, obj_sample, bk_sample):
 
 def construct_graph(image, feature_type):
     global gr
-    gr = digraph()
+    #gr = digraph()
+    gr = graphtools.FileGraph()
     feature_vector = constructFeatureVector(image, feature_type)
     constructNodes(feature_vector, gr, feature_type)
     constructEdges(feature_vector, gr, pixel_to_node, feature_type)
@@ -310,7 +313,8 @@ def graphcut(image_name, feature_type, obj_sample, bk_sample):
     constructGraph(img, feature_type, obj_sample, bk_sample)
 
     print "start max_flow"
-    graphtools.write(gr,"temp",src,dest)
+    #graphtools.write(gr,"temp",src,dest)
+    gr.write("temp")
     subprocess.call(["sh","solver.sh", 'temp','temp.out'])
     cut = graphtools.parse("temp.out",src,dest)
     #_, cut = maximum_flow(gr, src, dest);

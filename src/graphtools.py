@@ -40,3 +40,31 @@ def parse(filename,src,dst):
     f.close()
     return cut
 
+class FileGraph:
+    def __init__(self):
+        self.tlinks = [""]*4096
+        self.nlinks = [""]*4096
+        self.node_count = 0
+        self.edge_count = 0
+
+    def add_nodes(self,nodes):
+        self.node_count+=1
+
+    def add_edge(self,edge,wt):
+        self.nlinks.append(edge[0] + " " + edge[1] + " " + str(wt) + "\n")
+        self.edge_count+=1
+
+    def add_tedge(self,node,wt1,wt2):
+        self.tlinks.append(str(node) + " " + str(wt1) + " " + str(wt2) + "\n")
+        self.edge_count+=1
+
+    def write(self,filename):
+        f = open(filename,"w")
+        f.write(str(self.node_count-2) + " " + str(self.edge_count) + "\n")
+        for line in self.tlinks:
+            f.write(line)
+        f.write("==\n")
+        for line in self.nlinks:
+            f.write(line)
+        f.close()
+
