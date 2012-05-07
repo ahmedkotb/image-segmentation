@@ -3,6 +3,7 @@ import cv
 
 from PyQt4 import QtCore, QtGui
 import kmeans
+import meanshift
 import cv
 
 
@@ -119,6 +120,11 @@ class Window(QtGui.QWidget):
                 QtGui.QMessageBox.information(self, 'Error',
                         'LM is not supported in mean shift')
                 return
+            print imgPath,features[index]
+            org = cv.LoadImageM(imgPath)
+            im = meanshift.meanshift(imgPath,features[index])
+            cv.ShowImage("original",org)
+            cv.ShowImage("segmented",im)
 
 
     def browse2(self):

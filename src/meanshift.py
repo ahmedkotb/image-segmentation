@@ -8,6 +8,7 @@ import cv
 import cv2
 from numpy import *
 import pymeanshift as pms
+import time
 
 def meanshiftUsingIntensity(path):
 	im = cv.LoadImageM(path,cv.CV_LOAD_IMAGE_GRAYSCALE)
@@ -23,7 +24,7 @@ def meanshiftUsingIntensityAndLocation(path):
         for j in xrange(0,im.width):
             value = (im[i,j], i, j)
             mat[i,j] = value
-	    print mat[i,j]
+	    #print mat[i,j]
 
     (segmentedImage, labelsImage, numberRegions) = pms.segmentMeanShift(mat)
 
@@ -195,7 +196,7 @@ def meanshiftUsingPCA(path):
 
 	for i in xrange(0,thumbnail.height*thumbnail.width):
 		pcaResponse[i] = pca.getPCA(response[i],4)
-	
+
 	# Create new mean shift instance
 	ms = MeanShift(bandwidth=10,bin_seeding=True)
 	# Apply the mean shift clustering algorithm
@@ -207,15 +208,40 @@ def meanshiftUsingPCA(path):
 	cv.Resize(thumbnail, im)
 	return im
 
-#name = "../test images/general/58060.jpg"
-name = "../test images/single object/189080.jpg"
 
-#im = meanshiftUsingIntensity(name)
-#im = meanshiftUsingILM(name)
-im = meanshiftUsingPCA(name)
-#im = meanshiftUsingIntensityAndLocation(name)
-#im = meanshiftUsingRGB(name)
-#im = meanshiftUsingYUV(name)
+def meanshift(name,feature):
+    print feature
+    start = time.time()
+    im = None
+    if feature == "INTENSITY":
+        im = meanshiftUsingIntensity(name)
+    elif feature == "INTENSITY+LOC":
+        im = meanshiftUsingIntensityAndLocation(name)
+    elif feature == "RGB":
+        im = meanshiftUsingRGB(name)
+    elif feature == "YUV":
+        im = meanshiftUsingYUV(name)
+    elif feature == "ILM":
+        im = meanshiftUsingILM(name)
+    elif feature == "PCA":
+        im = meanshiftUsingPCA(name)
 
-cv.ShowImage("win1",im)
-cv.WaitKey(0)
+    end = time.time()
+
+    print "time",end - start,"seconds"
+
+    return im
+
+if __name__ == "__main__":
+    #name = "../test images/general/58060.jpg"
+    name = "../test images/single object/189080.jpg"
+
+    #im = meanshiftUsingIntensity(name)
+    #im = meanshiftUsingILM(name)
+    im = meanshiftUsingPCA(name)
+    #im = meanshiftUsingIntensityAndLocation(name)
+    #im = meanshiftUsingRGB(name)
+    #im = meanshiftUsingYUV(name)
+
+    cv.ShowImage("win1",im)
+    cv.WaitKey(0)
