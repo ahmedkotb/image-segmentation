@@ -84,7 +84,17 @@ def constructHist(fv_grid, sample, feature_type):
             y = sample[s][0]
             x = sample[s][1]
             hist[fv_grid[y, x, 0]/INT_DISC, y/YLOC_DISC, x/XLOC_DISC] += 1.0 / slen
-
+    elif feature_type == 'ILM' or feature_type == 'PCA':
+        hist = {}
+        for s in range(0, slen):
+            y = sample[s][0]
+            x = sample[s][1]
+            key = (int(fv_grid[y, x, 0]), int(fv_grid[y, x, 1]), int(fv_grid[y, x, 2]), int(fv_grid[y, x, 3]))
+            if hist.has_key(key):
+                hist[key] = hist[key]+1
+            else:
+                hist[key] = 1
+            
     return hist
 #--------------------------------------------------------------------------
 
@@ -105,7 +115,13 @@ def regionalCost(feature_vector, hist, feature_type):
             cost = INFINITY
         else:
             cost = LAMBDA * -1 * math.log(hist[feature_vector[0]/INT_DISC, feature_vector[1]/YLOC_DISC, feature_vector[2]/XLOC_DISC])
-
+    elif feature_type == 'ILM' or feature_type == 'PCA':
+        key = (int(feature_vector[0]), int(feature_vector[1]), int(feature_vector[2]), int(feature_vector[3]))
+        if hist.has_key(key):
+            cost = hist[key]
+        else:
+            cost = INFINITY
+            
     return cost
 #--------------------------------------------------------------------------
 
